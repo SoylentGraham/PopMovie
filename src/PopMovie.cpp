@@ -39,6 +39,20 @@ TVideoDeviceMeta TMovieDecoder::GetMeta() const
 	return GetDecoderMeta( mDecoder->mParams );
 }
 
+bool TMovieDecoder::CanSleep()
+{
+	if ( !mDecoder )
+		return true;
+	
+	auto NextFrameTime = mDecoder->GetNextPixelBufferTime();
+
+	//	got a frame to read, don't sleep!
+	if ( NextFrameTime.IsValid() )
+		return false;
+
+	return true;
+}
+
 bool TMovieDecoder::Iteration()
 {
 	if ( !mDecoder )

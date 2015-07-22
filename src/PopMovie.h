@@ -32,7 +32,8 @@ public:
 
 	virtual TVideoDeviceMeta	GetMeta() const override;
 
-	virtual bool				Iteration();
+	virtual bool				Iteration() override;
+	virtual bool				CanSleep() override;
 	
 public:
 	Opengl::TContext				mDummyContext;
