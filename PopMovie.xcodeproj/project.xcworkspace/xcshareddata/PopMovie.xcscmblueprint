@@ -1,0 +1,49 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "3F71B1D3DDF42C28381D67BA26EAE35932BDBD97",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "869C8B911CF328D50CA81E17EFFE779905E187BC" : 0,
+    "3F71B1D3DDF42C28381D67BA26EAE35932BDBD97" : 0,
+    "37417DDE19D70CE3CEE3CDEC3DF7735FC2972C83" : 0,
+    "87907EAD08F9AC05484849759EAC4E8AE0659685" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "9821C100-0D7B-4D4A-A20E-CB27973C77D0",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "869C8B911CF328D50CA81E17EFFE779905E187BC" : "RwdMovieTexture\/",
+    "3F71B1D3DDF42C28381D67BA26EAE35932BDBD97" : "PopMovie\/",
+    "37417DDE19D70CE3CEE3CDEC3DF7735FC2972C83" : "NewChromantics\/PopTrack\/",
+    "87907EAD08F9AC05484849759EAC4E8AE0659685" : "SoyLib\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "PopMovie",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 203,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "PopMovie.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/NewChromantics\/PopLib.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "37417DDE19D70CE3CEE3CDEC3DF7735FC2972C83"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/SoylentGraham\/PopTrack.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "37417DDE19D70CE3CEE3CDEC3DF7735FC2972C83"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/SoylentGraham\/PopMovie.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "3F71B1D3DDF42C28381D67BA26EAE35932BDBD97"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/NewChromantics\/RwdMovieTexture.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "869C8B911CF328D50CA81E17EFFE779905E187BC"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/SoylentGraham\/SoyLib.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "87907EAD08F9AC05484849759EAC4E8AE0659685"
+    }
+  ]
+}
