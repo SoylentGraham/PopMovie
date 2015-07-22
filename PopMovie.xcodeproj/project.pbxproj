@@ -20,6 +20,7 @@
 		BFA664731B55AD0A00C33A2A /* SoyString.mm in Sources */ = {isa = PBXBuildFile; fileRef = BFA664721B55AD0A00C33A2A /* SoyString.mm */; };
 		BFE572801B541B3400B17528 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BFE5727F1B541B3400B17528 /* CoreServices.framework */; };
 		BFE572851B544E3400B17528 /* SoyFilesystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFE572831B544E3400B17528 /* SoyFilesystem.cpp */; };
+		BFEF57061B60522C00340796 /* TJobEventSubscriber.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFEF57041B60522C00340796 /* TJobEventSubscriber.cpp */; };
 		FB2534BA1A974D0700A61590 /* PopMovie.xib in Resources */ = {isa = PBXBuildFile; fileRef = FBF67B371A974BF400F74C38 /* PopMovie.xib */; };
 		FB2534BB1A974E7400A61590 /* PopMain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FB8A067C1A2E69340099596C /* PopMain.cpp */; };
 		FB2534BC1A974E7400A61590 /* SoyData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FB8A067E1A2E69340099596C /* SoyData.cpp */; };
@@ -120,6 +121,8 @@
 		BFE5727F1B541B3400B17528 /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		BFE572831B544E3400B17528 /* SoyFilesystem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SoyFilesystem.cpp; path = src/SoyFilesystem.cpp; sourceTree = "<group>"; };
 		BFE572841B544E3400B17528 /* SoyFilesystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SoyFilesystem.h; path = src/SoyFilesystem.h; sourceTree = "<group>"; };
+		BFEF57041B60522C00340796 /* TJobEventSubscriber.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TJobEventSubscriber.cpp; path = src/TJobEventSubscriber.cpp; sourceTree = "<group>"; };
+		BFEF57051B60522C00340796 /* TJobEventSubscriber.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TJobEventSubscriber.h; path = src/TJobEventSubscriber.h; sourceTree = "<group>"; };
 		FB50C04A1A6ABD480011A9D9 /* array.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = array.hpp; path = src/array.hpp; sourceTree = "<group>"; };
 		FB50C04B1A6ABD480011A9D9 /* bufferarray.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = bufferarray.hpp; path = src/bufferarray.hpp; sourceTree = "<group>"; };
 		FB50C04C1A6ABD480011A9D9 /* HeapArray.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = HeapArray.hpp; path = src/HeapArray.hpp; sourceTree = "<group>"; };
@@ -419,6 +422,8 @@
 				FBF67B051A96B26900F74C38 /* TChannelFork.h */,
 				FB8A06A21A2E6AF80099596C /* TChannelPipe.h */,
 				FB8A06A41A2E6AF80099596C /* TChannelSocket.h */,
+				BFEF57041B60522C00340796 /* TJobEventSubscriber.cpp */,
+				BFEF57051B60522C00340796 /* TJobEventSubscriber.h */,
 				FB50C0511A6AC0980011A9D9 /* TFeatureBinRing.h */,
 				FB8A06831A2E6AB50099596C /* TJob.h */,
 				FB8A06851A2E6AB50099596C /* TJobFormat.h */,
@@ -582,6 +587,7 @@
 				FB2534C91A974E7400A61590 /* TProtocolHttp.cpp in Sources */,
 				FB2534C41A974E7400A61590 /* TJobFormat.cpp in Sources */,
 				FB2534F31A974F1400A61590 /* SignalTranslator.cpp in Sources */,
+				BFEF57061B60522C00340796 /* TJobEventSubscriber.cpp in Sources */,
 				FB2534CB1A974E7400A61590 /* TProtocolWebSocket.cpp in Sources */,
 				FB2534DE1A974E8200A61590 /* PopMovie.cpp in Sources */,
 				FB2534E61A974EFB00A61590 /* DeferredTestResult.cpp in Sources */,

@@ -15,14 +15,47 @@
 #include <Build/PopMovieTextureOsxFramework.framework/Headers/AvfMovieDecoder.h>
 #include <RemoteArray.h>
 
-TVideoDeviceMeta GetDecoderMeta(const TVideoDecoderParams& Params)
+
+
+void TMovieDecoderContainer::GetDevices(ArrayBridge<TVideoDeviceMeta>& Metas)
 {
-	return TVideoDeviceMeta("file", Params.mFilename );
+	for ( int m=0;	m<mMovies.GetSize();	m++ )
+	{
+		Metas.PushBack( mMovies[m]->GetMeta() );
+	}
 }
 
-TMovieDecoder::TMovieDecoder(const TVideoDecoderParams& Params) :
-	TVideoDevice	( GetDecoderMeta(Params) ),
-	SoyWorkerThread	( Params.mFilename, SoyWorkerWaitMode::Wake )
+std::shared_ptr<TVideoDevice> TMovieDecoderContainer::AllocDevice(const TVideoDeviceMeta& Meta,std::stringstream& Error)
+{
+	//	todo: look for existing
+	
+	TVideoDecoderParams DecoderParams( Meta.mName, SoyPixelsFormat::RGBA );
+	try
+	{
+		std::shared_ptr<TMovieDecoder> Movie( new TMovieDecoder( DecoderParams, Meta.mSerial ) );
+		mMovies.PushBack( Movie );
+		return Movie;
+	}
+	catch ( std::exception& e )
+	{
+		Error << "Failed to create movie decoder: " << e.what();
+		return nullptr;
+	}
+}
+
+TVideoDeviceMeta GetDecoderMeta(const TVideoDecoderParams& Params,const std::string& Serial)
+{
+	TVideoDeviceMeta Meta( Serial, Params.mFilename );
+	Meta.mVideo = true;
+	Meta.mTimecode = true;
+	//Meta.mConnected
+	return Meta;
+}
+
+TMovieDecoder::TMovieDecoder(const TVideoDecoderParams& Params,const std::string& Serial) :
+	TVideoDevice	( GetDecoderMeta(Params,Serial) ),
+	SoyWorkerThread	( Params.mFilename, SoyWorkerWaitMode::Wake ),
+	mSerial			( Serial )
 {
 	mDecoder = Platform::AllocDecoder( Params );
 	mDecoder->StartMovie( mDummyContext );
@@ -36,7 +69,7 @@ TVideoDeviceMeta TMovieDecoder::GetMeta() const
 	if ( !mDecoder )
 		return TVideoDeviceMeta();
 	
-	return GetDecoderMeta( mDecoder->mParams );
+	return GetDecoderMeta( mDecoder->mParams, mSerial );
 }
 
 bool TMovieDecoder::CanSleep()
@@ -94,16 +127,31 @@ bool TMovieDecoder::Iteration()
 
 
 TPopMovie::TPopMovie() :
-	TJobHandler		( static_cast<TChannelManager&>(*this) ),
-	TPopJobHandler	( static_cast<TJobHandler&>(*this) )
+	TJobHandler			( static_cast<TChannelManager&>(*this) ),
+	TPopJobHandler		( static_cast<TJobHandler&>(*this) ),
+	mSubcriberManager	( static_cast<TChannelManager&>(*this) )
 {
+	//	add videodecoder contaienr
+	mMovies.reset( new TMovieDecoderContainer() );
+	mVideoCapture.AddContainer( mMovies );
+
 	AddJobHandler("exit", TParameterTraits(), *this, &TPopMovie::OnExit );
 	
 	TParameterTraits DecodeParameterTraits;
-	DecodeParameterTraits.mAssumedKeys.PushBack("ref");
+	DecodeParameterTraits.mAssumedKeys.PushBack("serial");
 	DecodeParameterTraits.mAssumedKeys.PushBack("filename");
 	AddJobHandler("decode", DecodeParameterTraits, *this, &TPopMovie::OnStartDecode );
 
+	AddJobHandler("list", TParameterTraits(), *this, &TPopMovie::OnList );
+	TParameterTraits GetFrameTraits;
+	GetFrameTraits.mAssumedKeys.PushBack("serial");
+	GetFrameTraits.mRequiredKeys.PushBack("serial");
+	AddJobHandler("getframe", GetFrameTraits, *this, &TPopMovie::OnGetFrame );
+
+	TParameterTraits SubscribeNewFrameTraits;
+	SubscribeNewFrameTraits.mAssumedKeys.PushBack("serial");
+	SubscribeNewFrameTraits.mDefaultParams.PushBack( std::make_tuple(std::string("command"),std::string("newframe")) );
+	AddJobHandler("subscribenewframe", SubscribeNewFrameTraits, *this, &TPopMovie::SubscribeNewFrame );
 }
 
 bool TPopMovie::AddChannel(std::shared_ptr<TChannel> Channel)
@@ -135,36 +183,200 @@ void TPopMovie::OnStartDecode(TJobAndChannel& JobAndChannel)
 	auto Job = JobAndChannel.GetJob();
 	TJobReply Reply( JobAndChannel );
 	
-	auto Ref = Job.mParams.GetParamAs<std::string>("ref");
+	auto Serial = Job.mParams.GetParamAs<std::string>("serial");
 	auto Filename = Job.mParams.GetParamAs<std::string>("filename");
 	
-	auto& Video = mVideos[Ref];
-	if ( Video != nullptr )
-	{
-		std::stringstream Error;
-		Error << "Video with ref " << Ref << " already exists";
+	TVideoDeviceMeta Meta( Serial, Filename );
+	std::stringstream Error;
+	auto Device = mMovies->AllocDevice( Meta, Error );
+	
+
+	if ( !Error.str().empty() )
 		Reply.mParams.AddErrorParam( Error.str() );
-		
+
+	if ( Device )
+		Reply.mParams.AddDefaultParam( Serial );
+	
+	TChannel& Channel = JobAndChannel;
+	Channel.OnJobCompleted( Reply );
+}
+
+
+bool TPopMovie::OnNewFrameCallback(TEventSubscriptionManager& SubscriptionManager,TJobChannelMeta Client,TVideoDevice& Device)
+{
+	TJob OutputJob;
+	auto& Reply = OutputJob;
+	
+	std::stringstream Error;
+	//	grab pixels
+	auto& LastFrame = Device.GetLastFrame(Error);
+	if ( LastFrame.IsValid() )
+	{
+		auto& MemFile = LastFrame.mPixels.mMemFileArray;
+		TYPE_MemFile MemFileData( MemFile );
+		Reply.mParams.AddDefaultParam( MemFileData );
+	}
+	
+	//	add error if present (last frame could be out of date)
+	if ( !Error.str().empty() )
+		Reply.mParams.AddErrorParam( Error.str() );
+	
+	//	find channel, send to Client
+	//	std::Debug << "Got event callback to send to " << Client << std::endl;
+	
+	if ( !SubscriptionManager.SendSubscriptionJob( Reply, Client ) )
+		return false;
+	
+	return true;
+}
+
+
+void TPopMovie::OnGetFrame(TJobAndChannel& JobAndChannel)
+{
+	const TJob& Job = JobAndChannel;
+	TJobReply Reply( JobAndChannel );
+	
+	auto Serial = Job.mParams.GetParamAs<std::string>("serial");
+	auto AsMemFile = Job.mParams.GetParamAsWithDefault<bool>("memfile",true);
+	
+	std::Debug << Job.mParams << std::endl;
+	
+	std::stringstream Error;
+	auto Device = mVideoCapture.GetDevice( Serial, Error );
+	
+	if ( !Device )
+	{
+		std::stringstream ReplyError;
+		ReplyError << "Device " << Serial << " not found " << Error.str();
+		Reply.mParams.AddErrorParam( ReplyError.str() );
 		TChannel& Channel = JobAndChannel;
 		Channel.OnJobCompleted( Reply );
-		
 		return;
 	}
-
-	TVideoDecoderParams DecoderParams( Filename, SoyPixelsFormat::RGBA );
 	
-	try
+	//	grab pixels
+	auto& LastFrame = Device->GetLastFrame( Error );
+	if ( LastFrame.IsValid() )
 	{
-		Video.reset( new TMovieDecoder( DecoderParams ) );
+		if ( AsMemFile )
+		{
+			TYPE_MemFile MemFile( LastFrame.mPixels.mMemFileArray );
+			TJobFormat Format;
+			Format.PushFirstContainer<SoyPixels>();
+			Format.PushFirstContainer<TYPE_MemFile>();
+			Reply.mParams.AddDefaultParam( MemFile, Format );
+		}
+		else
+		{
+			SoyPixels Pixels;
+			Pixels.Copy( LastFrame.mPixels );
+			Reply.mParams.AddDefaultParam( Pixels );
+		}
+	}
+	
+	//	add error if present (last frame could be out of date)
+	if ( !Error.str().empty() )
+		Reply.mParams.AddErrorParam( Error.str() );
+	
+	//	add other stats
+	auto FrameRate = Device->GetFps();
+	auto FrameMs = Device->GetFrameMs();
+	Reply.mParams.AddParam("fps", FrameRate);
+	Reply.mParams.AddParam("framems", FrameMs );
+	Reply.mParams.AddParam("serial", Device->GetMeta().mSerial );
+	
+	TChannel& Channel = JobAndChannel;
+	Channel.OnJobCompleted( Reply );
+	
+}
 
-		std::stringstream Output;
-		Output << "Created video " << Ref;
-		Reply.mParams.AddDefaultParam( Output.str() );
-	}
-	catch ( std::exception& e )
+//	copied from TPopCapture::OnListDevices
+void TPopMovie::OnList(TJobAndChannel& JobAndChannel)
+{
+	TJobReply Reply( JobAndChannel );
+	
+	Array<TVideoDeviceMeta> Metas;
+	mVideoCapture.GetDevices( GetArrayBridge(Metas) );
+	
+	std::stringstream MetasString;
+	for ( int i=0;	i<Metas.GetSize();	i++ )
 	{
-		Reply.mParams.AddErrorParam( std::string(e.what()) );
+		auto& Meta = Metas[i];
+		if ( i > 0 )
+			MetasString << ",";
+		
+		MetasString << Meta;
 	}
+	
+	if ( !MetasString.str().empty() )
+		Reply.mParams.AddDefaultParam( MetasString.str() );
+	else
+		Reply.mParams.AddErrorParam("No devices found");
+	
+	TChannel& Channel = JobAndChannel;
+	Channel.OnJobCompleted( Reply );
+}
+
+
+void TPopMovie::SubscribeNewFrame(TJobAndChannel& JobAndChannel)
+{
+	const TJob& Job = JobAndChannel;
+	TJobReply Reply( JobAndChannel );
+	
+	std::stringstream Error;
+	
+	//	get device
+	auto Serial = Job.mParams.GetParamAs<std::string>("serial");
+	auto Device = mVideoCapture.GetDevice( Serial, Error );
+	if ( !Device )
+	{
+		std::stringstream ReplyError;
+		ReplyError << "Device " << Serial << " not found " << Error.str();
+		Reply.mParams.AddErrorParam( ReplyError.str() );
+		TChannel& Channel = JobAndChannel;
+		Channel.OnJobCompleted( Reply );
+		return;
+	}
+	
+	//	create new subscription for it
+	//	gr: determine if this already exists!
+	auto EventName = Job.mParams.GetParamAs<std::string>("command");
+	auto Event = mSubcriberManager.AddEvent( Device->mOnNewFrame, EventName, Error );
+	if ( !Event )
+	{
+		std::stringstream ReplyError;
+		ReplyError << "Failed to create new event " << EventName << ". " << Error.str();
+		Reply.mParams.AddErrorParam( ReplyError.str() );
+		TChannel& Channel = JobAndChannel;
+		Channel.OnJobCompleted( Reply );
+		return;
+	}
+	
+	//	make a lambda to recieve the event
+	auto Client = Job.mChannelMeta;
+	TEventSubscriptionCallback<TVideoDevice> ListenerCallback = [this,Client](TEventSubscriptionManager& SubscriptionManager,TVideoDevice& Value)
+	{
+		return this->OnNewFrameCallback( SubscriptionManager, Client, Value );
+	};
+	
+	//	subscribe this caller
+	if ( !Event->AddSubscriber( Job.mChannelMeta, ListenerCallback, Error ) )
+	{
+		std::stringstream ReplyError;
+		ReplyError << "Failed to add subscriber to event " << EventName << ". " << Error.str();
+		Reply.mParams.AddErrorParam( ReplyError.str() );
+		TChannel& Channel = JobAndChannel;
+		Channel.OnJobCompleted( Reply );
+		return;
+	}
+	
+	
+	std::stringstream ReplyString;
+	ReplyString << "OK subscribed to " << EventName;
+	Reply.mParams.AddDefaultParam( ReplyString.str() );
+	if ( !Error.str().empty() )
+		Reply.mParams.AddErrorParam( Error.str() );
+	Reply.mParams.AddParam("eventcommand", EventName);
 	
 	TChannel& Channel = JobAndChannel;
 	Channel.OnJobCompleted( Reply );
