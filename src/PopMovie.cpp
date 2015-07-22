@@ -72,11 +72,21 @@ bool TMovieDecoder::Iteration()
 	auto PixelsDataSize = PixelsMeta.GetDataSize();
 	auto PixelsArray = GetRemoteArray( PixelsData, PixelsDataSize );
 	SoyPixelsDef<FixedRemoteArray<uint8>> Pixels( PixelsArray, PixelsMeta );
-	
-	//	send new frame
-	OnNewFrame( Pixels, NextFrameTime );
-	
-	PixelBuffer->Unlock();
+
+	static bool DoNewFrameLock = true;
+	if ( DoNewFrameLock )
+	{
+		SoyPixelsImpl& NewFramePixels = LockNewFrame();
+		NewFramePixels.Copy( Pixels );
+		PixelBuffer->Unlock();
+		UnlockNewFrame( NextFrameTime );
+	}
+	else
+	{
+		//	send new frame
+		OnNewFrame( Pixels, NextFrameTime );
+		PixelBuffer->Unlock();
+	}
 	
 	return true;
 }
